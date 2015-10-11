@@ -1,0 +1,5 @@
+owncloud_url = https://example.com/owncloud/remote.php/webdav/
+owncloud_user = USERNAME
+owncloud_password = PASSWORD
+owncloud_upload_dir = UPLOAD_FOLDER
+upload_on_roaming = 0

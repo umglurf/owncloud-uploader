@@ -1,0 +1,9 @@
+[Unit]
+Description=owncloud uploadr
+
+[Service]
+ExecStart=__HOME__/bin/owncloud-uploader.pl
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
