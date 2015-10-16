@@ -1,5 +1,14 @@
+# webdav URL for owncloud server
 owncloud_url = https://example.com/owncloud/remote.php/webdav/
+# owncloud user name
 owncloud_user = USERNAME
+# owncloud password
 owncloud_password = PASSWORD
+# folder on the owncloud server to upload pictures to, for instance InstantUpload or leave blank to upload to root folder
 owncloud_upload_dir = UPLOAD_FOLDER
+# Upload on wifi networks
+upload_on_wifi = 1
+# Upload on cellular networks
+upload_on_cellular = 0
+# Upload on cellular networks when roaming, but will not take effect if upload_on_cellular is 0
 upload_on_roaming = 0

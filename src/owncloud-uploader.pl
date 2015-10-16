@@ -49,8 +49,12 @@ foreach my $key (qw(owncloud_url owncloud_user owncloud_password)) {
     exit 1;
   };
 };
+my $upload_on_cellular = 0;
+$upload_on_cellular = 1 if $conf->param('upload_on_cellular') && $conf->param('upload_on_cellular') == 1;
 my $upload_on_roaming = 0;
 $upload_on_roaming = 1 if $conf->param('upload_on_roaming') && $conf->param('upload_on_roaming') == 1;
+my $upload_on_wifi = 0;
+$upload_on_wifi = 1 if $conf->param('upload_on_wifi') && $conf->param('upload_on_wifi') == 1;
 
 # start dispatcer
 # Instead of complicated thread synchronization or other schemes, we simply
@@ -198,13 +202,19 @@ sub test_connectivity {
     $logger->debug("Service '" . $info->{'Name'} . "' type " . $info->{'Type'} . " state " . $info->{'State'});
     if($info->{'Type'} eq 'wifi' and $info->{'State'} eq 'online') {
       $logger->debug("Is online on wifi");
-      return 1;
-    } elsif($info->{'Type'} eq 'cellular' and $info->{'State'} eq 'online') {
+      return 1 if $upload_on_wifi;
+    };
+    if($info->{'Type'} eq 'cellular' and $info->{'State'} eq 'online') {
       my $roaming = $info->{'Roaming'};
       $logger->debug('Is online on cellular, roaming') if $roaming;
       $logger->debug('Is online on cellular, not roaming') unless $roaming;
-      return 1 if $roaming and $upload_on_roaming;
-      return 1 unless $roaming;
+      if($upload_on_cellular) {
+        if($roaming) {
+          return 1 if $upload_on_roaming;
+        } else {
+          return 1;
+        };
+      };
     };
   };
 
