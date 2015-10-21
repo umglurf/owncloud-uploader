@@ -17,6 +17,7 @@ install` (after doing `devel-su`)
  * gcc
  * gcc-c++
  * perl-XML-Parser
+ * dbus-devel
  * openssl-devel
  * systemd-devel
  
