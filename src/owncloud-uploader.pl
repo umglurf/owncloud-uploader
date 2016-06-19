@@ -181,7 +181,23 @@ sub do_picture_upload {
     $logger->warn("File $file does not exist");
     return 1;
   };
-  if($dav->put(-local => $file, -url => $upload_dir)) {
+  my ($name,$path,$suffix) = fileparse($file, ".jpg");
+  my $upload_name = $name;
+  my $upload_dest = $upload_dir;
+  if($conf->param('upload_zeros_to_add')) {
+    if($upload_name =~ /^(\d+)_(\d+)$/) {
+      $upload_name = $1 . '_' . '0' x $conf->param('upload_zeros_to_add') . $2;
+    };
+  };
+  if($conf->param('upload_prefix')) {
+    $upload_name = $conf->param('upload_prefix') . $upload_name;
+  };
+  if($conf->param('upload_suffix')) {
+    $upload_name = $upload_name . $conf->param('upload_suffix');
+  };
+  $upload_name = $upload_name . $suffix;
+  $logger->debug("uploading $file to $upload_dir/$upload_name");
+  if($dav->put(-local => $file, -url => "$upload_dir/$upload_name")) {
     $logger->info("Uploaded file $file ok");
     return 1;
   } else {

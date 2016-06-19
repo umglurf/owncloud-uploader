@@ -6,6 +6,19 @@ owncloud_user = USERNAME
 owncloud_password = PASSWORD
 # folder on the owncloud server to upload pictures to, for instance InstantUpload or leave blank to upload to root folder
 owncloud_upload_dir = UPLOAD_FOLDER
+
+#optional, add x amount of 0 to running number on picture, e.g
+#for picture 20160101_001.jpg
+#with upload_zeros_to_add=2
+#it will be uploaded as 20160101_00001.jpg
+#upload_zeros_to_add=0
+
+#optional prefix to add to uploaded picture
+#upload_prefix=xx
+
+#optional suffix to add to uploaded picture
+#upload_suffix=xx
+
 # Upload on wifi networks
 upload_on_wifi = 1
 # Upload on cellular networks
