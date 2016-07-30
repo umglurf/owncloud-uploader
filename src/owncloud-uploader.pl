@@ -156,7 +156,7 @@ sub do_picture_upload {
     -user => $conf->param('owncloud_user'),
     -pass => $conf->param('owncloud_password'),
     -url => $url,
-    -realm => 'sabre/dav'
+    -realm => 'ownCloud'
   );
   unless($dav->open(-url => $url)) {
     $logger->error("Unable to open $url: " . $dav->message);
