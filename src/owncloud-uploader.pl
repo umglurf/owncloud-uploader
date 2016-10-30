@@ -115,8 +115,15 @@ sub graph_updated_signal_handler {
   foreach my $insert (@$inserts) {
     my $ids = join(',', @$insert);
     my $result = $object->SparqlQuery("SELECT ?t { ?r nie:url ?t .FILTER (tracker:id(?r) IN ($ids)) }");
-    next unless $result->[0]->[0] =~ qr{^file://(.*)};
-    next if exists $seen_files{$1};
+    $logger->debug("Got '$result' from tracker");
+    unless($result->[0]->[0] =~ qr{^file://(.*)}) {
+      $logger->debug("Not a file URI, skipping");
+      next;
+    };
+    if(exists $seen_files{$1}) {
+      $logger->debug("Already seen $1, skipping");
+      next;
+    };
     $logger->debug("Adding $1 to upload queue");
     $seen_files{$1} = time;
     $dispatcher->say($1);
