@@ -58,41 +58,30 @@ $upload_on_wifi = 1 if $conf->param('upload_on_wifi') && $conf->param('upload_on
 
 # Read queue and upload files
 my $uploader = Child->new(sub {
+  my $num = 0;
   while(1) {
     if(opendir(my $dir, $uploads_dir)) {
+      $num = 0;
       while(my $file = readdir($dir)) {
         next if $file =~ /^\.\.?$/;
         next unless -l "$uploads_dir/$file";
         $logger->info("Starting upload of $file");
-        unlink("$uploads_dir/$file") if picture_upload("$uploads_dir/$file");
+        if(picture_upload("$uploads_dir/$file")) {
+          unlink("$uploads_dir/$file") 
+        } else {
+          $num++;
+        };
       };
       closedir($dir);
     } else {
       $logger->error("Unable to open $uploads_dir: $!");
-      sleep(600);
+      return 0;
     };
+    return 1 if $num == 0;
     sleep(300);
   };
 });
-$uploader->start;
-
-# start dispatcer
-# Instead of complicated thread synchronization or other schemes, we simply
-# start up a child process to handle new files to be uploaded. This process
-# adds new files to the queue and the upload process periodically handles the queue.
-#
-# We start up the dispatcher before opening up the dbus socket to avoid having
-# to close it again and to save memory
-my $child = Child->new(sub {
-    my $self = shift;
-    $SIG{CHLD} = 'IGNORE';
-    while(1) {
-      my $file = $self->read();
-      chomp $file;
-      add_picture_to_queue($file);
-    };
-  }, pipe => 1);
-my $dispatcher = $child->start;
+my $upload = $uploader->start;
 
 my $bus = Net::DBus->find;
 my $service = $bus->get_service("org.freedesktop.Tracker1");
@@ -134,7 +123,10 @@ sub graph_updated_signal_handler {
     };
     $logger->info("Adding $1 to upload queue");
     $seen_files{$1} = time;
-    $dispatcher->say($1);
+    add_picture_to_queue($1);
+    if($upload->is_complete) {
+      $upload = $uploader->start;
+    };
     my $key;
     my $value;
     # purge out cache to save memory
