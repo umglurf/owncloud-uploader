@@ -127,7 +127,7 @@ sub graph_updated_signal_handler {
     my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
       $atime,$mtime,$ctime,$blksize,$blocks)
     = stat($1);
-    if($time - $mtime > 300) {
+    if(time - $mtime > 300) {
       $logger->debug("File $1 more than 5 minutes old, skipping");
       next;
     };
