@@ -117,7 +117,6 @@ sub graph_updated_signal_handler {
   foreach my $insert (@$inserts) {
     my $ids = join(',', @$insert);
     my $result = $object->SparqlQuery("SELECT ?t { ?r nie:url ?t .FILTER (tracker:id(?r) IN ($ids)) }");
-    $logger->debug("Got '$result' from tracker");
     unless($result->[0]->[0] =~ qr{^file://(.*)}) {
       $logger->debug("Not a file URI, skipping");
       next;
