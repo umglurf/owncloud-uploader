@@ -113,7 +113,7 @@ sub graph_updated_signal_handler {
   my $deletes = shift;
   my $inserts = shift;
   # we only look for photos beeing added
-  next unless $class eq 'http://www.tracker-project.org/temp/nmm#Photo';
+  return unless $class eq 'http://www.tracker-project.org/temp/nmm#Photo';
   foreach my $insert (@$inserts) {
     my $ids = join(',', @$insert);
     my $result = $object->SparqlQuery("SELECT ?t { ?r nie:url ?t .FILTER (tracker:id(?r) IN ($ids)) }");
