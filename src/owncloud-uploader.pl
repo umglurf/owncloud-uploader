@@ -56,11 +56,31 @@ $upload_on_roaming = 1 if $conf->param('upload_on_roaming') && $conf->param('upl
 my $upload_on_wifi = 0;
 $upload_on_wifi = 1 if $conf->param('upload_on_wifi') && $conf->param('upload_on_wifi') == 1;
 
+# Read queue and upload files
+my $uploader = Child->new(sub {
+  while(1) {
+    if(opendir(my $dir, $uploads_dir)) {
+      while(my $file = readdir($dir)) {
+        next if $file =~ /^\.\.?$/;
+        next unless -l "$uploads_dir/$file";
+        $logger->info("Starting upload of $file");
+        unlink("$uploads_dir/$file") if picture_upload("$uploads_dir/$file");
+      };
+      closedir($dir);
+    } else {
+      $logger->error("Unable to open $uploads_dir: $!");
+      sleep(600);
+    };
+    sleep(300);
+  };
+});
+$uploader->start;
+
 # start dispatcer
 # Instead of complicated thread synchronization or other schemes, we simply
 # start up a child process to handle new files to be uploaded. This process
-# again starts up one new process per file which will run until upload is
-# successfull
+# adds new files to the queue and the upload process periodically handles the queue.
+#
 # We start up the dispatcher before opening up the dbus socket to avoid having
 # to close it again and to save memory
 my $child = Child->new(sub {
@@ -69,28 +89,10 @@ my $child = Child->new(sub {
     while(1) {
       my $file = $self->read();
       chomp $file;
-      my $child = Child->new(sub {
-          upload_picture($file);
-        });
-      my $proc = $child->start;
+      add_picture_to_queue($file);
     };
   }, pipe => 1);
 my $dispatcher = $child->start;
-
-# read non-uploaded files and resume
-# We save each file to be uploaded as a symlink, thus beeing able to resume
-# upload on restart of the program
-if(opendir(my $dir, $uploads_dir)) {
-  while(my $file = readdir($dir)) {
-    next if $file =~ /^\.\.?$/;
-    next unless -l "$uploads_dir/$file";
-    $logger->info("Resuming upload of $file");
-    $dispatcher->say("$uploads_dir/$file");
-  };
-  closedir($dir);
-} else {
-  $logger->warn("Unable to open $uploads_dir: $!, skipping resume of uploads");
-};
 
 my $bus = Net::DBus->find;
 my $service = $bus->get_service("org.freedesktop.Tracker1");
@@ -143,24 +145,18 @@ sub graph_updated_signal_handler {
   };
 };
 
-# This is the process handling upload of one file, it will run forever until
-# file upload is successfull or the file has been deleted
-sub upload_picture {
+sub add_picture_to_queue {
   my $file = shift;
   my ($name,$path,$suffix) = fileparse($file);
   unless(-l "$uploads_dir/$name") { # resuming old upload
     unless(symlink($file, "$uploads_dir/$name")) {
-      $logger->warn("Unable to make symlink for $file, it will not be resumed on restart if it is not finished uploading");
+      $logger->error("Unable to make symlink for $file");
     };
   };
-  while(!do_picture_upload($file)) {
-    sleep(300);
-  };
-  unlink("$uploads_dir/$name");
 };
 
-# do actual upload to owncloud
-sub do_picture_upload {
+# upload to owncloud
+sub picture_upload {
   my $file = shift;
   return unless test_connectivity();
 
