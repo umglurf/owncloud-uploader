@@ -124,7 +124,14 @@ sub graph_updated_signal_handler {
       $logger->debug("Already seen $1, skipping");
       next;
     };
-    $logger->debug("Adding $1 to upload queue");
+    my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
+      $atime,$mtime,$ctime,$blksize,$blocks)
+    = stat($1);
+    if($time - $mtime > 300) {
+      $logger->debug("File $1 more than 5 minutes old, skipping");
+      next;
+    };
+    $logger->info("Adding $1 to upload queue");
     $seen_files{$1} = time;
     $dispatcher->say($1);
     my $key;
